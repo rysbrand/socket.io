@@ -62,4 +62,15 @@ io.on("connection", (socket) => {
     });
 
     //reset event listener
+    socket.on("reset_poll", () => {
+        votes = Object.fromEntries(options.map((o) => [o.id, 0]));
+        console.log("Poll reset!");
+        io.emit("poll_update", buildDeliverable());
+    });
+});
+
+//start server
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`server running at http://localhost:${PORT}`);
 })
