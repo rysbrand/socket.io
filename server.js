@@ -33,3 +33,33 @@ const options = [
 //sets them equal to zero
 let votes = Object.fromEntries(options.map((o) => [o.id,  0]));
 
+//helper functions
+//takes the assigned value of the object intno an array, uses.reduce to iterate through
+//the array to condense into a single value. 0 is the initial value
+function getTotalVotes() {
+    return Object.values(votes).reduce((sum,v) => sum + v,0);
+}
+
+function buildDeliverable() {
+    return {question, options, votes, total: getTotalVotes() };
+}
+
+//event handling
+io.on("connection", (socket) => {
+    console.log(`client connected: ${socket.id}`);
+
+    //send state to new client
+    socket.emit("poll_state", buildDeliverable());
+
+    //listen for vote from client
+    socket.on("vote", (optionId) => {
+        if(votes[optionId] !== undefined) {
+            votes[optionId] == 1;
+            console.log(`vote recieved from "${optionId}" - total:`, votes);
+
+            io.emit("poll_update", buildDeliverable());
+        }
+    });
+
+    //reset event listener
+})
