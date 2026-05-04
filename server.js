@@ -29,6 +29,9 @@ const options = [
   { id: "csharp", label: "C# 💗",         emoji: "💗" },
 ];
 
+// This is needed for how the vote function works
+const userVotes = {};
+
 //vote mapping
 //sets them equal to zero
 let votes = Object.fromEntries(options.map((o) => [o.id,  0]));
@@ -54,8 +57,20 @@ io.on("connection", (socket) => {
     //listen for vote from client
     socket.on("vote", (optionId) => {
         if(votes[optionId] !== undefined) {
-            votes[optionId] == 1;
-            console.log(`vote recieved from "${optionId}" - total:`, votes);
+            const previousVote = userVotes[socket.id];
+
+            // If user voted before, remove old vote
+            if (previousVote !== undefined) {
+                votes[previousVote] -= 1;
+            }
+
+            // Add Vote
+            votes[optionId] += 1;
+
+            // Stores users current vote
+            userVotes[socket.id] = optionId;
+
+            console.log(`vote recieved for "${optionId}" from "${socket.id}" - total:`, votes);
 
             io.emit("poll_update", buildDeliverable());
         }
