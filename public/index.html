@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>✨ Kawaii Poll</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <div class="card">
+    <h1 id="question-text">Loading...</h1>
+    <p class="subtitle">vote below — results update live for everyone 🐾</p>
+
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="status-text">Connecting...</span>
+    </div>
+
+    <div id="options-container"></div>
+
+    <div class="footer">
+      <span class="total">Total votes: <strong id="total-count">0</strong></span>
+      <button id="reset-btn">🔄 Reset Poll</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    const questionEl  = document.getElementById("question-text");
+    const optionsEl   = document.getElementById("options-container");
+    const totalEl     = document.getElementById("total-count");
+    const resetBtn    = document.getElementById("reset-btn");
+    const dot         = document.getElementById("dot");
+    const statusText  = document.getElementById("status-text");
+
+    socket.on("connect", () => {
+      dot.classList.add("connected");
+      statusText.textContent = "Connected 🌸";
+    });
+
+    socket.on("disconnect", () => {
+      dot.classList.remove("connected");
+      statusText.textContent = "Disconnected";
+    });
+
+    socket.on("poll_state", (data) => {
+      renderPoll(data);
+    });
+
+    socket.on("poll_update", (data) => {
+      updateBars(data);
+    });
+
+    function renderPoll(data) {
+      questionEl.textContent = data.question;
+
+      data.options.forEach((opt) => {
+        const count = data.votes[opt.id] || 0;
+        const pct   = data.total ? Math.round((count / data.total) * 100) : 0;
+
+        const row = document.createElement("div");
+        row.className = "option-row";
+        row.innerHTML = `
+          <button class="vote-btn" data-id="${opt.id}">
+            ${opt.label}
+            <span class="count" id="count-${opt.id}">${count}</span>
+          </button>
+          <div class="bar-track">
+            <div class="bar-fill" id="bar-${opt.id}" style="width:${pct}%"></div>
+          </div>
+        `;
+        optionsEl.appendChild(row);
+      });
+
+      totalEl.textContent = data.total;
+
+      optionsEl.querySelectorAll(".vote-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          socket.emit("vote", btn.dataset.id);
+        });
+      });
+    }
+
+    function updateBars(data) {
+      const total = data.total || 1;
+      data.options.forEach((opt) => {
+        const count = data.votes[opt.id] || 0;
+        const pct   = Math.round((count / total) * 100);
+        const countEl = document.getElementById(`count-${opt.id}`);
+        const barEl   = document.getElementById(`bar-${opt.id}`);
+        if (countEl) countEl.textContent = count;
+        if (barEl)   barEl.style.width   = pct + "%";
+      });
+      totalEl.textContent = data.total;
+    }
+
+    resetBtn.addEventListener("click", () => {
+      socket.emit("reset_poll");
+    });
+  </script>
+</body>
+</html>
