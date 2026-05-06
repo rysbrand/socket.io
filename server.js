@@ -20,7 +20,7 @@ const io = new Server (server, {
 });
 
 //setting vote info
-const question = "What's your programming language? 🐻‍❄️";
+const question = "What's your favorite programming language? 🐻‍❄️";
 
 const options = [
   { id: "js",     label: "JavaScript 🌸", emoji: "🌸" },
